@@ -1,0 +1,11 @@
+{
+  "scripts": {
+    "start": "node src/server.js",
+    "server": "node src/server.js",
+    "gen": "node src/gen_style/index.js"
+  },
+  "dependencies": {
+    "express": "^4.17.3",
+    "puppeteer": "^13.5.2"
+  }
+}

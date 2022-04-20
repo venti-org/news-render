@@ -1,0 +1,75 @@
+enum Display {
+    Inline = 0,  //此元素会被显示为内联元素，元素前后没有换行符
+    None = 1,  //此元素不会被显示
+    Block = 2,  //此元素将显示为块级元素，此元素前后会带有换行符
+    InlineBlock = 3,  //行内块元素
+    ListItem = 4,     //此元素会作为列表显示
+    RunIn = 5,  //此元素会根据上下文作为块级元素或内联元素显示
+    Compact = 6,       // CSS 中有值 compact
+    Marker = 7,        // CSS 中有值 marker
+    Table = 8,         //此元素会作为块级表格来显示
+    InlineTable = 9,  //此元素会作为内联表格来显示
+    TableRowGrouP = 10,  //此元素会作为一个或多个行的分组来显示
+    TableHeaderGroup = 11,  //此元素会作为一个或多个行的分组来显示
+    TableFooterGroup = 12,  //此元素会作为一个或多个行的分组来显示
+    TableRow = 13,  //此元素会作为一个表格行显示
+    TableColumnGroup = 14,  //此元素会作为一个或多个列的分组来显示
+    TableColumn = 15,   //此元素会作为一个单元格列显示
+    TableCell = 16,     //此元素会作为一个表格单元格显示
+    TableCaption = 17,  //此元素会作为一个表格标题显示
+    Inherit = 18,  //规定应该从父元素继承 display 属性的值    
+};
+
+enum Overflow {
+    Visible = 0,  //不裁剪内容，可能会显示在内容框之外
+    Hidden = 1,   //裁剪内容 - 不提供滚动机制
+    Scroll = 2,   //裁剪内容 - 提供滚动机制
+    Auto = 3,     //如果溢出框，则应该提供滚动机制
+    NoDisplay = 4,  //如果内容不适合内容框，则删除整个框
+    NoContent = 5  //如果内容不适合内容框，则隐藏整个内容
+};
+
+enum Float {  //规定框是否应该浮动
+    None = 0,  //默认值。元素不浮动，并会显示在其在文本中出现的位置。
+    Left = 1,    //元素向左浮动
+    Right = 2,   //元素向右浮动
+    Inherit = 3  //规定应该从父元素继承 float 属性的值
+};
+
+enum Position {  //属性规定元素的定位类型
+    Static = 0,  //默认值。没有定位，元素出现在正常的流中
+    Absolute = 1,  //生成绝对定位的元素，相对于 static 定位以外的第一个父元素进行定
+    Fixed = 2,  //生成绝对定位的元素，相对于浏览器窗口进行定位
+    Relative = 3,  //生成相对定位的元素，相对于其正常位置进行定位
+    Inherit = 4  //规定应该从父元素继承 position 属性的值
+};
+
+enum TextAlign {
+    Left = 0,               //文本左边排列
+    Right = 1,              //文本右边排列
+    Center = 2,             //文本中间排列
+    Justify = 3,            //文本两端对齐
+    TextAlignInherit = 4    //文本从父元素继承
+};
+
+struct StyleIndex {
+    border_bottom_width = 8,
+    border_left_width = 11,
+    border_right_width = 14,
+    border_top_width = 17,
+    font_size = 22,
+    font_weight = 24,
+    padding_bottom = 30,
+    padding_left = 31,
+    padding_right = 32,
+    padding_top = 33,
+    display: Display = 39,
+    float_: Float = 40,
+    overflow_x: Overflow = 41,
+    overflow_y: Overflow = 42,
+    position: Position = 43,
+    color = 44,
+    text_align: TextAlign = 46,
+    text_indent = 47,
+    z_index = 50,
+};
