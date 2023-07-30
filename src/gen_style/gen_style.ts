@@ -1,19 +1,15 @@
-const {
-    parse_define,
-    ROOT_NAME,
-    toLine,
-} = require('./parse_define');
+import { parse_define, ROOT_NAME, toLine } from './parse_define';
 
-function gen_style() {
-    let {
-        enum_values,
-        struct_types,
-    } = parse_define();
-    let name_values = {};
+function gen_style(): { max_index: number, name_values: { 
+        [key: string]: { name: string, result_type: [string, any][] }
+    } } {
+
+    let { enum_values, struct_types } = parse_define();
+    let name_values: { [key: string]: { name: string, result_type: [string, any][] } } = {};
     let style_index = enum_values[ROOT_NAME];
     let max_index = -1;
     for (let name in style_index) {
-        let result_type = null;
+        let result_type: [string, any][] = [];
         let index = style_index[name];
         let enum_v = enum_values[struct_types[ROOT_NAME][name]];
         if (enum_v !== undefined) {
@@ -26,7 +22,7 @@ function gen_style() {
             }
             result_type = [];
             for (let key in enum_v) {
-                new_key = toLine(key, contain_line);
+                let new_key = toLine(key, contain_line);
                 result_type.push([new_key, enum_v[key]]);
             }
         }
@@ -44,6 +40,4 @@ function gen_style() {
     };
 }
 
-module.exports = {
-    gen_style,
-};
+export default gen_style;

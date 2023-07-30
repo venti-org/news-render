@@ -1,14 +1,12 @@
-const { 
-    gen_style, 
-} = require('./gen_style');
+import gen_style from './gen_style';
+import gen_rust from './gen_rust';
 
-module.exports = {
+export {
     gen_style,
 };
 
 function main() {
-    const gen_rust = require('./gen_rust');
-    let support_langs = {
+    let support_langs: { [key: string]: any } = {
         'rust': gen_rust,
     };
     let cmd = process.argv.slice(0, 2).join(' ');
@@ -16,7 +14,7 @@ function main() {
     if (args.length <= 0) {
         console.log('usage:');
         console.log(`    ${cmd} lang`);
-        let langs = [];
+        let langs: string[] = [];
         for (let lang in support_langs) {
             langs.push(lang);
         }
@@ -25,6 +23,10 @@ function main() {
     }
     let lang = args[0];
     let action = support_langs[lang];
+    if (!action) {
+        console.log(`not support ${lang}`);
+        return;
+    }
     let result = action();
 }
 

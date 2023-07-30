@@ -1,62 +1,68 @@
-const fs = require('fs');
-const path = require('path');
+import * as fs from 'fs';
+import * as path from 'path';
 
-const ENUM_OR_STRUCT = 0;
-const NAME = 1;
-const LEFT = 2;
-const KEY_OR_RIGHT = 3;
-const ASSIGN_OR_COMMA = 4;
-const VALUE = 5;
-const COMMA_OR_RIGHT = 6;
-const SEMICOLON = 7;
-const COLON = 8; // :
-const TYPE = 9;
+const ENUM_OR_STRUCT: number = 0;
+const NAME: number = 1;
+const LEFT: number = 2;
+const KEY_OR_RIGHT: number = 3;
+const ASSIGN_OR_COMMA: number = 4;
+const VALUE: number = 5;
+const COMMA_OR_RIGHT: number = 6;
+const SEMICOLON: number = 7;
+const COLON: number = 8; // :
+const TYPE: number = 9;
 
-const ROOT_NAME = 'StyleIndex';
+const ROOT_NAME: string = 'StyleIndex';
 
-function assert_token(token, value) {
+function assert_token(token: string, value: string): void {
     if (token != value) {
         throw new Error(`except token ${value} but got ${token}`);
     }
 }
 
-function assert_var_name(token) {
-    let index = token.indexOf(/[^a-zA-Z0-9_]/);
-    let first = token.charCodeAt(0);
+function assert_ne(src: any, value: any): void {
+    if (src == value) {
+        throw new Error(`src == value: "${src}" == "${value}"`);
+    }
+}
+
+function assert_var_name(token: string): void {
+    let index: number = token.search(/[^a-zA-Z0-9_]/);
+    let first: number = token.charCodeAt(0);
 
     if (index >= 0 || (first >= 48 && first <= 57)) {
         throw new Error(`not except var name ${token}`);
     }
 }
 
-function assert_int(token) {
-    let n = Number.parseInt(token);
+function assert_int(token: string): number {
+    let n: number = Number.parseInt(token);
     return n;
 }
 
 // 下划线转换驼峰
-function toHump(name) {
+function toHump(name: string): string {
     return name.replace(/\_(\w)/g, function(all, letter){
         return letter.toUpperCase();
     });
 }
 // 驼峰转换下划线
-function toLine(name, contain_line=null) {
+function toLine(name: string, contain_line: boolean | null = null): string {
     if (contain_line === null) {
         contain_line = name.indexOf('_') >= 0
     }
     if (contain_line) {
-        return name.toLowerCase().replaceAll('_', '-').replace(/^-+|-+$/g, '');
+        return name.toLowerCase().replace(/_/g, '-').replace(/^-+|-+$/g, '');
     } else {
         return name.replace(/([A-Z])/g,"-$1").toLowerCase().replace(/^-+|-+$/g, '');
     }
 }
 
-function parse_define() {
-    let define_path = path.join(__dirname, 'style.define');
-    let source = fs.readFileSync(define_path, 'utf-8');
-    source = source.replaceAll(/\/\/.*/g, '');
-    let tokens = [];
+function parse_define(): { enum_values: any, struct_types: any } {
+    let define_path: string = path.join(__dirname, 'style.define');
+    let source: string = fs.readFileSync(define_path, 'utf-8');
+    source = source.replace(/\/\/.*/g, '');
+    let tokens: string[] = [];
     for (let token of source.split(/\s+/)) {
         if (token.length == 1) {
             tokens.push(token);
@@ -74,15 +80,16 @@ function parse_define() {
             tokens.push(token);
         }
     }
-    let status = ENUM_OR_STRUCT;
-    let enum_values = {};
-    let struct_types = {};
-    let enum_v;
-    let struct_t;
-    let last_index = -1;
-    let indexs = new Set();
-    let name = '';
-    let mode = '';
+    let status: number = ENUM_OR_STRUCT;
+    let enum_values: any = {};
+    let struct_types: any = {};
+    let enum_v: any;
+    let struct_t: any;
+    let last_index: number = -1;
+    let indexs: Set<number> = new Set();
+    let name: string = '';
+    let mode: string = '';
+    let key: string = '';
     for (let token of tokens) {
         if (!token) {
             continue;
@@ -143,6 +150,7 @@ function parse_define() {
                     if (enum_values[token] === undefined) {
                         throw new Error(`not exists enum ${token}`);
                     }
+                    assert_ne(key, '');
                     struct_t[key] = token;
                     status = ASSIGN_OR_COMMA;
                     break
@@ -151,10 +159,11 @@ function parse_define() {
                         status = VALUE;
                     } else {
                         assert_token(token, ',');
-                        let v = ++last_index;
+                        let v: number = ++last_index;
                         if (indexs.has(v)) {
                             throw new Error(`${name} already exists index: ${v}`);
                         }
+                        assert_ne(key, '');
                         if (enum_v[key] !== undefined) {
                             throw new Error(`${name} already exists key: ${key}`);
                         }
@@ -164,14 +173,16 @@ function parse_define() {
                     break
                 case VALUE:
                     status = COMMA_OR_RIGHT;
-                    let v = assert_int(token);
+                    let v: number = assert_int(token);
                     if (indexs.has(v)) {
                         throw new Error(`${name} already exists index: ${v}`);
                     }
+                    assert_ne(key, '');
                     if (enum_v[key] !== undefined) {
                         throw new Error(`${name} already exists key: ${key}`);
                     }
                     enum_v[key] = last_index = v;
+                    key = '';
                     break
                 case COMMA_OR_RIGHT:
                     if (token == '}') {
@@ -196,7 +207,7 @@ function parse_define() {
     }
 }
 
-module.exports = {
+export {
     parse_define,
     ROOT_NAME,
     toLine,

@@ -1,14 +1,22 @@
 # news-render
 
+## build
+
+```sh
+npm insntall -g yarn
+
+yarn
+```
+
 ## server
 
 ```bash
-npm run server
+yarn server
 ```
 
 ## generate parser render html code
 
 ```bash
-npm run gen rust
+yarn gen rust
 ```
 
