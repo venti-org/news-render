@@ -1,27 +1,14 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as puppeteer from 'puppeteer';
-import { gen_style } from './gen_style';
+import { gen_style } from '../gen_style';
+import { RenderRequest, RenderResponse } from '../validator/validate_types';
 
 declare global {
     interface Window {
         prerenderData: any;
     }
 }
-
-type RenderRequest = {
-    url: string;
-    enable_js?: boolean;
-    javascript?: string;
-    key?: string;
-};
-
-type RenderResponse = {
-    render_error?: string;
-    render_html?: string;
-    javascript_error?: string;
-    javascript_result?: string;
-};
 
 class Browser {
     private _browser: puppeteer.Browser | null;

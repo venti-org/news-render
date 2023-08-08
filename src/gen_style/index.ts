@@ -1,13 +1,16 @@
 import gen_style from './gen_style';
 import gen_rust from './gen_rust';
+import gen_cpp from './gen_cpp';
 
 export {
+    gen_cpp,
     gen_style,
 };
 
 function main() {
     let support_langs: { [key: string]: any } = {
         'rust': gen_rust,
+        'cpp': gen_cpp,
     };
     let cmd = process.argv.slice(0, 2).join(' ');
     let args = process.argv.slice(2);

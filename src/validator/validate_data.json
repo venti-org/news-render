@@ -1,0 +1,44 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "properties": {
+        "RenderRequest": {
+            "properties": {
+                "enable_js": {
+                    "type": "boolean"
+                },
+                "javascript": {
+                    "type": "string"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "url"
+            ],
+            "type": "object"
+        },
+        "RenderResponse": {
+            "properties": {
+                "javascript_error": {
+                    "type": "string"
+                },
+                "javascript_result": {
+                    "type": "string"
+                },
+                "render_error": {
+                    "type": "string"
+                },
+                "render_html": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        }
+    },
+    "type": "object"
+}
+
