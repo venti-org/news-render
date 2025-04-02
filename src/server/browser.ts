@@ -99,8 +99,7 @@ class Browser {
         });
         let response: RenderResponse = {};
         try {
-            await page.goto(request.url)
-            await page.waitForNavigation({
+            await page.goto(request.url, {
                 timeout: 10000,
                 waitUntil: 'networkidle2',
             });
