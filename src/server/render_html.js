@@ -1,4 +1,4 @@
-function get_vision(elem) {
+const get_vision = (function(elem) {
     let rect = elem.getClientRects()[0];
     if (rect) {
         let visible = Number(getComputedStyle(elem)['visibility'] != 'hidden');
@@ -6,9 +6,9 @@ function get_vision(elem) {
     } else {
         return '0;0;0;0;0';
     }
-}
+});
 
-function get_style(elem, gen_style) {
+const get_style = (function(elem, gen_style) {
     let style = getComputedStyle(elem);
     let {
         max_index,
@@ -64,14 +64,14 @@ function get_style(elem, gen_style) {
         }
     }
     return result.join(';');
-}
+});
 
-function render(gen_style) {
+const render = (function(gen_style) {
     document.querySelectorAll('*').forEach(elem => {
         elem.setAttribute('surface_vision_info', get_vision(elem));
         elem.setAttribute('dom_style_info', get_style(elem, gen_style));
     });
     return true;
-}
+});
 
 render("GEN_STYLE");

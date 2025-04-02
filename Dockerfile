@@ -13,8 +13,7 @@ WORKDIR /root
 
 COPY package.json .
 COPY yarn.lock .
+RUN yarn install --prod --frozen-lockfile && yarn playwright install chromium
 COPY dist ./dist
-
-RUN yarn install --prod --frozen-lockfile
 
 CMD [ "yarn", "start" ]

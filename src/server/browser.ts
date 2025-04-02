@@ -1,8 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import * as URL from 'url';
-import * as puppeteer from 'puppeteer';
-import { ResourceType, HTTPRequest } from 'puppeteer';
+import * as playwright from 'playwright';
 import { gen_style } from '../gen_style';
 import { RenderRequest, RenderResponse } from '../validator/validate_types';
 
@@ -13,7 +11,7 @@ declare global {
 }
 
 class Browser {
-    private _browser: puppeteer.Browser | null;
+    private _browser: playwright.Browser | null;
     private _render_html_js: string | null;
 
     constructor() {
@@ -32,27 +30,25 @@ class Browser {
             '--disable-features=HttpsUpgrades',
         ];
 
-        const options: puppeteer.LaunchOptions  = {
+        const options: playwright.LaunchOptions  = {
             args: args,
             headless: true,
-            acceptInsecureCerts: true,
-            defaultViewport: { width: 1280, height: 800 },
         };
-        this._browser = await puppeteer.launch(options);
+        this._browser = await playwright.chromium.launch(options);
         let GEN_STYLE = gen_style();
         // console.log(JSON.stringify(GEN_STYLE));
         let render_html_path = path.join(__dirname, 'render_html.js');
         this._render_html_js = fs.readFileSync(render_html_path, 'utf-8').replace('"GEN_STYLE"', JSON.stringify(GEN_STYLE));
     }
 
-    blockResourceType(request: RenderRequest, urlRequest: HTTPRequest): boolean | undefined {
+    blockResourceType(request: RenderRequest, urlRequest: playwright.Request): boolean | string {
         let resourceType = urlRequest.resourceType();
         console.log(urlRequest.url(), resourceType);
         if (request.body && urlRequest.isNavigationRequest() 
             && urlRequest.method() == "GET") {
-            urlRequest.respond({body: request.body, status: 200});
+            let body = request.body;
             request.body = "";
-            return undefined;
+            return body;
         }
         if (request.disable_network) {
             return true;
@@ -74,16 +70,32 @@ class Browser {
     }
 
     async render(request: RenderRequest): Promise<RenderResponse> {
-        const page = await this._browser!.newPage();
-        await page.setJavaScriptEnabled(Boolean(request.enable_js));
-        await page.setRequestInterception(true);
-        page.on('request', urlRequest => {
+        const context = await this._browser!.newContext({
+            javaScriptEnabled: Boolean(request.enable_js),
+            viewport: {width: 1280, height: 800},
+        });
+        const page = await context.newPage();
+        let blockCount = new Map();
+        page.route("**/*", async route => {
+            const urlRequest = route.request();
+            console.log(urlRequest.url(), urlRequest.resourceType());
+            let url = urlRequest.url();
             let block = this.blockResourceType(request, urlRequest);
-            if (block === undefined) {
+            let times = (blockCount.get(url) || 0 ) + 1;
+            blockCount.set(url, times)
+            if (typeof block == 'string') {
+                await route.fulfill({
+                    status: 200,
+                    body: block,
+                })
             } else if (block) {
-                urlRequest.abort();
+                if (times > 3) {
+                    await route.continue()
+                } else {
+                    await route.abort()
+                }
             } else {
-                urlRequest.continue();
+                await route.continue()
             }
         });
         const urlResponseChain: any[] = [];
@@ -101,13 +113,14 @@ class Browser {
         try {
             await page.goto(request.url, {
                 timeout: 10000,
-                waitUntil: 'networkidle2',
+                waitUntil: 'networkidle',
             });
         } catch (e: any) {
             await page.close();
             response.error_msg = e.toString();
             return response;
         }
+
         let urlResponse;
         if (urlResponseChain.length > 0) {
             urlResponse = urlResponseChain[urlResponseChain.length-1];
