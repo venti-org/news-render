@@ -1,4 +1,4 @@
-FROM mirror/node:20
+FROM node:23
 
 RUN sed -i 's/deb.debian.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apt/sources.list.d/debian.sources \
     && apt update \

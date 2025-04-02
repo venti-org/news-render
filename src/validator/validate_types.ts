@@ -10,6 +10,9 @@ type RenderRequest = {
 };
 
 type RenderResponse = {
+    error_msg?: string;
+    url?: string;
+    http_code?: number,
     render_error?: string;
     render_html?: string;
     javascript_error?: string;

@@ -86,8 +86,36 @@ class Browser {
                 urlRequest.continue();
             }
         });
-        await page.goto(request.url, { waitUntil: 'networkidle2' });
+        const urlResponseChain: any[] = [];
+        page.on('response', urlResponse => {
+            const urlRequest = urlResponse.request();
+            if (urlRequest.resourceType() === 'document') {
+                urlResponseChain.push({
+                  url: urlRequest.url(),
+                  status: urlResponse.status(),
+                  headers: urlResponse.headers()
+                });
+            }
+        });
         let response: RenderResponse = {};
+        try {
+            await page.goto(request.url, {
+                timeout: 10000,
+                waitUntil: 'networkidle2',
+            });
+        } catch (e: any) {
+            await page.close();
+            response.error_msg = e.toString();
+            return response;
+        }
+        let urlResponse;
+        if (urlResponseChain.length > 0) {
+            urlResponse = urlResponseChain[urlResponseChain.length-1];
+        }
+        if (urlResponse) {
+            response.url = urlResponse.url;
+            response.http_code = urlResponse.status;
+        }
         if (request.javascript) {
             try {
                 await page.evaluate(request.javascript);

@@ -35,6 +35,15 @@
         },
         "RenderResponse": {
             "properties": {
+                "error_msg": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                },
+                "http_code": {
+                    "type": "number"
+                },
                 "javascript_error": {
                     "type": "string"
                 },
