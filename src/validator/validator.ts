@@ -24,7 +24,12 @@ function getCompileValidate(name: string): ValidateFunction {
 function getValidateQuery(name: string): (req: Request, resp: Response, next: () => void) => void {
     let validate = getCompileValidate(name);
     return (req: Request, res: Response, next: () => void) => {
-        const valid = validate(req.query);
+        let valid = false;
+        if (req.method == "POST") {
+            valid = validate(req.body);
+        } else {
+            valid = validate(req.query);
+        }
         if (!valid) {
             return res.status(400).json({ error: (validate.errors as any)[0].message });
         }

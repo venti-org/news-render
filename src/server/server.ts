@@ -7,7 +7,7 @@ let browser = new Browser();
 
 async function render(request: Request, response: Response) {
     let req: RenderRequest = request.query as any;
-    if (!req) {
+    if (!req || Object.keys(req).length == 0) {
         req = request.body as any;
     }
     console.log(req);
