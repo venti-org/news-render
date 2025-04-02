@@ -1,7 +1,11 @@
 type RenderRequest = {
     url: string;
     enable_js?: boolean;
+    enable_image?: boolean;
+    disable_network?: boolean;
+    enable_media?: boolean;
     javascript?: string;
+    body?: string;
     key?: string;
 };
 

@@ -3,7 +3,19 @@
     "properties": {
         "RenderRequest": {
             "properties": {
+                "body": {
+                    "type": "string"
+                },
+                "disable_network": {
+                    "type": "boolean"
+                },
+                "enable_image": {
+                    "type": "boolean"
+                },
                 "enable_js": {
+                    "type": "boolean"
+                },
+                "enable_media": {
                     "type": "boolean"
                 },
                 "javascript": {

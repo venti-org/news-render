@@ -1,6 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import * as URL from 'url';
 import * as puppeteer from 'puppeteer';
+import { ResourceType, HTTPRequest } from 'puppeteer';
 import { gen_style } from '../gen_style';
 import { RenderRequest, RenderResponse } from '../validator/validate_types';
 
@@ -27,14 +29,14 @@ class Browser {
             '--window-position=0,0',
             '--ignore-certifcate-errors',
             '--ignore-certifcate-errors-spki-list',
-            //'--user-agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.3312.0 Safari/537.36"'
+            '--disable-features=HttpsUpgrades',
         ];
 
-        const options: puppeteer.PuppeteerLaunchOptions  = {
+        const options: puppeteer.LaunchOptions  = {
             args: args,
-            headless: 'new',
-            ignoreHTTPSErrors: true,
-            defaultViewport: { width: 1280, height: 800 }
+            headless: true,
+            acceptInsecureCerts: true,
+            defaultViewport: { width: 1280, height: 800 },
         };
         this._browser = await puppeteer.launch(options);
         let GEN_STYLE = gen_style();
@@ -43,16 +45,47 @@ class Browser {
         this._render_html_js = fs.readFileSync(render_html_path, 'utf-8').replace('"GEN_STYLE"', JSON.stringify(GEN_STYLE));
     }
 
-    async render(request: RenderRequest): Promise<RenderResponse> {
-        request = {
-            enable_js: false,
-            javascript: '',
-            key: '',
-            ...request,
-        };
+    blockResourceType(request: RenderRequest, urlRequest: HTTPRequest): boolean | undefined {
+        let resourceType = urlRequest.resourceType();
+        console.log(urlRequest.url(), resourceType);
+        if (request.body && urlRequest.isNavigationRequest() 
+            && urlRequest.method() == "GET") {
+            urlRequest.respond({body: request.body, status: 200});
+            request.body = "";
+            return undefined;
+        }
+        if (request.disable_network) {
+            return true;
+        }
+        switch (resourceType) {
+            case 'script':
+                return !request.enable_js;
+            case 'font':
+                return false;
+            case 'stylesheet':
+                return false;
+            case 'media':
+                return !request.enable_media;
+            case 'image':
+                return !request.enable_image;
+            default:
+                return false;
+        }
+    }
 
+    async render(request: RenderRequest): Promise<RenderResponse> {
         const page = await this._browser!.newPage();
-        await page.setJavaScriptEnabled(request.enable_js as boolean);
+        await page.setJavaScriptEnabled(Boolean(request.enable_js));
+        await page.setRequestInterception(true);
+        page.on('request', urlRequest => {
+            let block = this.blockResourceType(request, urlRequest);
+            if (block === undefined) {
+            } else if (block) {
+                urlRequest.abort();
+            } else {
+                urlRequest.continue();
+            }
+        });
         await page.goto(request.url, { waitUntil: 'networkidle2' });
         let response: RenderResponse = {};
         if (request.javascript) {
