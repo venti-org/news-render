@@ -42,8 +42,8 @@ class Browser {
     }
 
     blockResourceType(request: RenderRequest, urlRequest: playwright.Request): boolean | string {
-        let resourceType = urlRequest.resourceType();
-        console.log(urlRequest.url(), resourceType);
+        const resourceType = urlRequest.resourceType();
+        const url = urlRequest.url();
         if (request.body && urlRequest.isNavigationRequest() 
             && urlRequest.method() == "GET") {
             let body = request.body;
@@ -52,6 +52,9 @@ class Browser {
         }
         if (request.disable_network) {
             return true;
+        }
+        if (!url.startsWith("http://") && !url.startsWith("https://")) {
+            return false;
         }
         switch (resourceType) {
             case 'script':
@@ -75,26 +78,45 @@ class Browser {
             viewport: {width: 1280, height: 800},
         });
         const page = await context.newPage();
+        let response: RenderResponse = {};
+        try {
+            response = await this.renderInternal(page, request);
+        } catch (e: any) {
+            response.error_msg = e.toString();
+        }
+        await page.close();
+
+        if (!response.error_msg && request.key) {
+            return (response as any)[request.key];
+        }
+        return response;
+    }
+
+    async renderInternal(page: playwright.Page, request: RenderRequest): Promise<RenderResponse> {
         let blockCount = new Map();
         page.route("**/*", async route => {
             const urlRequest = route.request();
-            console.log(urlRequest.url(), urlRequest.resourceType());
-            let url = urlRequest.url();
-            let block = this.blockResourceType(request, urlRequest);
-            let times = (blockCount.get(url) || 0 ) + 1;
+            const url = urlRequest.url();
+            const resourceType = urlRequest.resourceType();
+            const block = this.blockResourceType(request, urlRequest);
+            const times = (blockCount.get(url) || 0 ) + 1;
             blockCount.set(url, times)
             if (typeof block == 'string') {
+                console.log("fulfill:", url, resourceType);
                 await route.fulfill({
                     status: 200,
                     body: block,
                 })
             } else if (block) {
                 if (times > 3) {
+                    console.log("allow:", url, resourceType);
                     await route.continue()
                 } else {
+                    console.log("block:", url, resourceType);
                     await route.abort()
                 }
             } else {
+                console.log("allow:", url, resourceType);
                 await route.continue()
             }
         });
@@ -109,26 +131,19 @@ class Browser {
                 });
             }
         });
-        let response: RenderResponse = {};
-        try {
-            await page.goto(request.url, {
-                timeout: 10000,
-                waitUntil: 'networkidle',
-            });
-        } catch (e: any) {
-            await page.close();
-            response.error_msg = e.toString();
-            return response;
-        }
+        await page.goto(request.url, {
+            timeout: 10000,
+            waitUntil: 'networkidle',
+        });
 
-        let urlResponse;
-        if (urlResponseChain.length > 0) {
-            urlResponse = urlResponseChain[urlResponseChain.length-1];
+        if (urlResponseChain.length == 0) {
+            throw new Error("not found response url");
         }
-        if (urlResponse) {
-            response.url = urlResponse.url;
-            response.http_code = urlResponse.status;
-        }
+        const urlResponse = urlResponseChain[urlResponseChain.length-1];
+        let response: RenderResponse = {
+            url: urlResponse.url,
+            http_code: urlResponse.status,
+        };
         if (request.javascript) {
             try {
                 await page.evaluate(request.javascript);
@@ -146,19 +161,11 @@ class Browser {
                 response.javascript_error = e.toString();
             }
         }
-        try {
-            await page.evaluate(this._render_html_js!);
-            response.render_html = await page.evaluate(() => {
-                return document.documentElement.outerHTML;
-            });
-        } catch (e: any) {
-            response.render_error = e.toString();
-        }
+        await page.evaluate(this._render_html_js!);
+        response.render_html = await page.evaluate(() => {
+            return document.documentElement.outerHTML;
+        });
 
-        await page.close();
-        if (request.key) {
-            return (response as any)[request.key];
-        }
         return response;
     }
 
